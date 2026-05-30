@@ -1,16 +1,8 @@
 use rsomics_common::{Result, RsomicsError};
 use std::io::{BufRead, BufWriter, Write};
 
-/// Convert BED records to GFF3 format.
-///
-/// Each BED record becomes one GFF3 feature line. BED coordinates are 0-based
-/// half-open; GFF3 coordinates are 1-based closed — start is incremented by 1.
-///
-/// `source`: the GFF3 source field (column 2).
-/// `feature_type`: the GFF3 type field (column 3).
-///
-/// Output always starts with `##gff-version 3`.
-/// Returns the number of features written.
+/// BED→GFF3: 0-based half-open → 1-based closed (start += 1).
+/// Always emits `##gff-version 3` header. Returns features written.
 pub fn bed_to_gff<R: BufRead, W: Write>(
     reader: R,
     source: &str,
@@ -34,7 +26,7 @@ pub fn bed_to_gff<R: BufRead, W: Write>(
         let start: u64 = f[1]
             .parse::<u64>()
             .map_err(|e| RsomicsError::InvalidInput(format!("start: {e}")))?
-            + 1; // BED 0-based → GFF3 1-based
+            + 1; // 0-based → 1-based
         let end = f[2];
         let name = if f.len() > 3 { f[3] } else { "." };
         let score = if f.len() > 4 { f[4] } else { "." };
