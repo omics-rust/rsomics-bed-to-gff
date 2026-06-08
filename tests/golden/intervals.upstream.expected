@@ -1,0 +1,4 @@
+##gff-version 3
+chr1	.	region	1	100	100	+	.	Name=gene1
+chr1	.	region	201	300	200	-	.	Name=gene2
+chr2	.	region	51	150	.	.	.	Name=.

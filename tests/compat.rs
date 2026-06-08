@@ -1,5 +1,6 @@
 use rsomics_bed_to_gff::bed_to_gff;
-use std::io::Cursor;
+use std::io::{BufReader, Cursor};
+use std::path::Path;
 
 #[test]
 fn bed6_to_gff3() {
@@ -55,4 +56,23 @@ fn headers_and_blank_lines_skipped() {
     let mut out = Vec::new();
     let n = bed_to_gff(Cursor::new(bed), ".", ".", &mut out).unwrap();
     assert_eq!(n, 1);
+}
+
+// Differential against the canonical awk BED→GFF one-liner. The golden was
+// captured from GNU awk 5.1.0:
+//   awk -F'\t' -v src=. -v ftype=region '
+//     BEGIN { OFS="\t"; print "##gff-version 3" }
+//     /^#/ || /^$/ { next } NF < 3 { next }
+//     { print $1, src, ftype, $2+1, $3,
+//             (NF>4?$5:"."), (NF>5?$6:"."), ".", "Name=" (NF>3?$4:".") }'
+// Defaults match the binary (--source ., --feature-type region). Output is
+// byte-identical, no normalization.
+#[test]
+fn matches_awk_upstream_golden() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden");
+    let input = std::fs::File::open(dir.join("intervals.bed")).unwrap();
+    let mut out = Vec::new();
+    bed_to_gff(BufReader::new(input), ".", "region", &mut out).unwrap();
+    let expected = std::fs::read(dir.join("intervals.upstream.expected")).unwrap();
+    assert_eq!(out, expected);
 }
